@@ -117,15 +117,14 @@ $ ./run.sh --package D --test-mode --repo examples/repos/simple.txt --reverse
 
 ### Примеры для трех пакетов
 
-Описания лежат в `examples/plantuml/`, картинки рендерит сервер PlantUML:
+Описания лежат в `examples/plantuml/`:
 
-- serde 1.0.200 — [картинка][serde] (6 пакетов)
-- rand 0.8.5 — [картинка][rand] (11 пакетов)
-- tokio 1.40.0 — [картинка][tokio] (40 пакетов)
+- `serde.puml` — serde 1.0.200 (6 пакетов)
+- `rand.puml` — rand 0.8.5 (11 пакетов)
+- `tokio.puml` — tokio 1.40.0 (40 пакетов)
 
-[serde]: https://www.plantuml.com/plantuml/svg/PP4nJiCm68Ltdy8gSohRIOLOK65cP4UM_HCid3_5-OrWB9VW6eWf0-8Cper8wYfAos8zwNtl-LdUTgG3nSOpSkI1fy_qbRvJF-nJdtxIxx0VFbBFEmWMk5oBjHA2TSyETpheXbjurD7JFRpHZNSrDe34pNX0O04CQQp7qjL9VCLrnr7mYpjNFz6jZ_0FVR0GtEjPGYwnNMXDqMWJMdMWfBZCb5fIBx6bt58TxVBahdVaQWhBg-nMIpUYCws5mjdfKOSfnv8D6-SNnVMq2MLMQbRbh2g6AginKSvSTQxAMMtO5j1Et_47
-[rand]: https://www.plantuml.com/plantuml/svg/RPAzJiCm54PtFuLLvbYnyx-Wmip8ZenpQIqI9pXEHTdAI_0QYAa3uXdSDyAfGqWBKXGT-Jl-RdILPMUuDdrT8IDD1TY-sNVxOVU7dTtRJ_jrs1rUxHvhhaeSafmag7kKgkMQrxY41zvNvXQUpLKbLwe6PR1mBz18Wp1ShLpZulVk0lCEgn1VtCZLsbnNFSozIjuBvp522-fDUbvp9zRSFSwAoEYmlqwZmHafYRqHpOsstGILD92dnr5iR8ddpWleHZJjzlZHQUIDv3yZA47B3Po8wSauvmKr5xfXc9AGq33pLZQtdlh6m36FnpYVnzrMOJPSfeLFYtdQAocQ4W9P3kiVIjXOGaFabXq4byCcVuXD5275FCKJkRFOKu9KuYb5AlMKJPHFL22LZJFSk7mIYtFA9tBY4bGv_7JV
-[tokio]: https://www.plantuml.com/plantuml/svg/NLP1Rjim4Bpx5K9xbY2IaYLVYhJd7ditQ8coMLEaIb6narlwYNwZw2c7eczGVbHI8aKoG11CkEFTdTbT8m-Zmb9DFTifgXX9vb_px_dF_FhsCh_EV-T_RozlF-VNH8ah5Gd8YZpBT-ELyW5Bt2SjwV34r3ToLvyPFVEUS9Kq-XUHEqaQXVbPv_mGVlf3WiU4vyd7h_HyKL_OH4Bc2JTN9N53aZn3MLMjR11I1ihJGOhl-YLbL1acp81bmf29srP2Hlb2gJAmKb18QRfpIZlTMfwLQxW8muoUcZN_mNww3CCzvVJvAEwqDIKEhi8-v8YJwLI7lVWgZCjfL4tQadxzEyz01kkLLuUy6-Mjk8rQCh-kBQsaGoHd68v1gjAHG1woEioqC4PIxPx4IiZ5RDiSYCm-qvvH4owsU6HnJ_eU3t1L3oqZSdZiTRL7qcYFmTwP32ANrTD0sXHBmd42zIHSdZ8U9YCIBd4dAlAvOrWHQAfam16gTwqs5waJr1coyJeUnFEesd2E8FAsuu_BdhXDYoozuF5oakB6pG2tLOEHbtg0vAxTqYs0mec4aPtw6FLSz0WbwOxw3gZI9RTHmtXrPODWXqT3APsnC3Rs9kwfQSsKt2YnhOo9nkn0YWSAbyM2hbpaB_anqKVCp84R5wo5CBAu4wnTofaqTbzWR3BcncBW4yJxUy7w1-OhnLg48gVFH9aaeZSdvR8WyBx8iH6Ih6dStKTEDtIu4BdSY2iJkpjC7S5gacHShiCbYVoLAUbeii-soqPbFA6dGOcq4Nql-6gjfUtZlH2JMi9x6uvClJoT93Nd8V7JeXdOGQBw_H7ngJVxuYKVTlgRDaq_cQzGX-2EWnMX3HKRAZUqtr2reNf3EZEocNCFWOVGGxJ1QaEr3nSUwkfx2tNvoiBAmzf3tG78VVlGgii3308C0so48w_NPeI5nqRymJvh2hIgzKbuN0LOzmLXy1vq08kjILZQPzqxjEdrTdiC0cmCzFeSH2Z0vjrF4FaHEeWCjahrqdbi1b5ukZKTcQbK0QujFkmU26_DVmd_0G00
+Картинку можно получить командой с `--image` (см. `scripts/demo_stage5.sh`)
+или вставив содержимое файла на https://www.plantuml.com/plantuml.
 
 ### Сравнение с `cargo tree`
 
