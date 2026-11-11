@@ -3,8 +3,10 @@
 import argparse
 import sys
 
-from depviz import cargo
+from depviz.cargo import RepoError
 from depviz.config import DEFAULT_REPO, ConfigError, make_config
+from depviz.graph import build_graph, edge_count, find_cycle
+from depviz.repository import open_repository
 
 EXIT_CONFIG_ERROR = 2
 EXIT_REPO_ERROR = 3
@@ -29,42 +31,38 @@ def build_parser():
     return parser
 
 
-def describe(dep):
-    """Строка с описанием прямой зависимости."""
-    notes = [dep.kind]
-    if dep.optional:
-        notes.append("optional")
-    if dep.target:
-        notes.append(f"target={dep.target}")
-    return f"  {dep.name} {dep.req} [{', '.join(notes)}]"
+def print_graph(graph, root):
+    """Вывести граф списком смежности и сведения о циклах."""
+    print(f"Граф зависимостей {root.label()} (пакетов: {len(graph)}, "
+          f"связей: {edge_count(graph)})")
+    for node, deps in graph.items():
+        targets = ", ".join(dep.label() for dep in deps) or "(нет)"
+        print(f"  {node.label()} -> {targets}")
+    cycle = find_cycle(graph)
+    if cycle:
+        path = " -> ".join(node.label() for node in cycle)
+        print(f"Обнаружена циклическая зависимость: {path}")
 
 
-def print_direct(config):
-    """Вывести все прямые зависимости заданной версии пакета."""
-    entries = cargo.fetch_entries(config.repo, config.package)
-    entry = cargo.find_version(entries, config.version)
-    deps = cargo.direct_dependencies(entry)
-    print(f"Прямые зависимости {config.package} {config.version}:")
-    if not deps:
-        print("  (нет)")
-    for dep in deps:
-        print(describe(dep))
+def run(config):
+    """Построить граф по параметрам и вывести его."""
+    repo = open_repository(config)
+    root = repo.root(config.package, config.version)
+    graph = build_graph(repo, root, config.filter)
+    print_graph(graph, root)
 
 
 def main(argv=None):
-    """Точка входа: разобрать опции и вывести прямые зависимости."""
+    """Точка входа: разобрать опции и вывести граф зависимостей."""
     args = build_parser().parse_args(argv)
     try:
         config = make_config(args)
     except ConfigError as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         return EXIT_CONFIG_ERROR
-    if config.test_mode:
-        print("Тестовый режим будет реализован на этапе 3")
-        return 0
     try:
-        print_direct(config)
-    except cargo.RepoError as error:
+        run(config)
+    except RepoError as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         return EXIT_REPO_ERROR
     return 0

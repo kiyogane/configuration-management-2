@@ -9,6 +9,8 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 
+from depviz import semver
+
 USER_AGENT = "depviz-study (configuration-management practice)"
 TIMEOUT_SECONDS = 20
 HTTP_NOT_FOUND = 404
@@ -31,10 +33,13 @@ class Dependency:
     kind: str
     optional: bool
     target: str | None
+    feature_name: str = ""
 
-    def is_required(self):
-        """Нужна ли зависимость при обычной сборке пакета."""
-        return self.kind in REQUIRED_KINDS and not self.optional
+    def is_required(self, enabled=frozenset()):
+        """Нужна ли зависимость при сборке с включенными фичами."""
+        if self.kind not in REQUIRED_KINDS:
+            return False
+        return not self.optional or self.feature_name in enabled
 
 
 def index_path(name):
@@ -86,6 +91,61 @@ def find_version(entries, version):
     raise RepoError(f"версия {version} не найдена (последние: {latest})")
 
 
+def fits(requirement, version):
+    """semver.matches, но с ошибкой репозитория вместо ValueError."""
+    try:
+        return semver.matches(requirement, version)
+    except ValueError as error:
+        raise RepoError(str(error)) from error
+
+
+def select_version(entries, requirement):
+    """Выбрать наибольшую версию, подходящую под требование.
+
+    Как и Cargo, сначала рассматриваются релизы без пометки yanked,
+    затем пре-релизы, затем отозванные (yanked) версии.
+    """
+    groups = (
+        [e for e in entries if not e.get("yanked") and "-" not in e["vers"]],
+        [e for e in entries if not e.get("yanked")],
+        entries,
+    )
+    for group in groups:
+        suitable = [e for e in group if fits(requirement, e["vers"])]
+        if suitable:
+            return max(suitable, key=lambda e: semver.sort_key(e["vers"]))
+    name = entries[0]["name"] if entries else "?"
+    raise RepoError(f"нет версии {name}, подходящей под '{requirement}'")
+
+
+def expand_feature(item, features, enabled, queue):
+    """Обработать один элемент списка фич."""
+    if item.startswith("dep:"):
+        enabled.add(item[len("dep:"):])
+    elif "/" in item:
+        dep_name = item.split("/")[0]
+        if not dep_name.endswith("?"):
+            enabled.add(dep_name)
+    elif item in features:
+        queue.extend(features[item])
+    else:
+        enabled.add(item)
+
+
+def default_features(entry):
+    """Имена опциональных зависимостей, включенных фичей default."""
+    features = dict(entry.get("features") or {})
+    features.update(entry.get("features2") or {})
+    enabled, seen = set(), set()
+    queue = list(features.get("default", []))
+    while queue:
+        item = queue.pop()
+        if item not in seen:
+            seen.add(item)
+            expand_feature(item, features, enabled, queue)
+    return enabled
+
+
 def parse_dependency(raw):
     """Преобразовать JSON-описание зависимости в Dependency."""
     return Dependency(
@@ -94,9 +154,25 @@ def parse_dependency(raw):
         kind=raw.get("kind") or "normal",
         optional=raw.get("optional", False),
         target=raw.get("target"),
+        feature_name=raw["name"],
     )
 
 
 def direct_dependencies(entry):
     """Вернуть все прямые зависимости версии пакета."""
     return [parse_dependency(raw) for raw in entry["deps"]]
+
+
+def required_dependencies(entry):
+    """Зависимости, нужные при сборке с фичами по умолчанию.
+
+    dev-зависимости отбрасываются, опциональные остаются, только если
+    их включает фича default. Повторы (одна зависимость для разных
+    платформ) объединяются по имени.
+    """
+    enabled = default_features(entry)
+    result = {}
+    for dep in direct_dependencies(entry):
+        if dep.is_required(enabled) and dep.name not in result:
+            result[dep.name] = dep
+    return list(result.values())

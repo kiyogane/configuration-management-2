@@ -4,11 +4,9 @@ import io
 import json
 import unittest
 import urllib.error
-from contextlib import redirect_stdout
 from unittest import mock
 
 from depviz import cargo
-from depviz.cli import main
 
 ENTRY_OLD = {"name": "demo", "vers": "0.1.0", "deps": []}
 ENTRY = {
@@ -84,16 +82,37 @@ class CargoTest(unittest.TestCase):
             with self.assertRaises(cargo.RepoError):
                 cargo.fetch_entries("https://index.crates.io", "nope")
 
-    def test_main_prints_direct(self):
-        """main выводит прямые зависимости."""
-        fake = FakeResponse(INDEX_TEXT.encode())
-        out = io.StringIO()
-        with mock.patch("urllib.request.urlopen", return_value=fake):
-            with redirect_stdout(out):
-                code = main(["--package", "demo", "--version", "1.0.0"])
-        self.assertEqual(code, 0)
-        self.assertIn("libc ^0.2 [normal]", out.getvalue())
-        self.assertIn("serde ^1 [normal, optional]", out.getvalue())
+    def test_select_version(self):
+        """Выбирается наибольшая подходящая версия, yanked в конце."""
+        entries = [
+            {"name": "x", "vers": "1.2.0", "yanked": False},
+            {"name": "x", "vers": "1.3.0", "yanked": True},
+            {"name": "x", "vers": "1.4.0-beta", "yanked": False},
+            {"name": "x", "vers": "2.0.0", "yanked": False},
+        ]
+        pick = cargo.select_version
+        self.assertEqual(pick(entries, "^1")["vers"], "1.2.0")
+        self.assertEqual(pick(entries, "^1.4.0-beta")["vers"], "1.4.0-beta")
+        self.assertEqual(pick(entries, "=1.3.0")["vers"], "1.3.0")
+        with self.assertRaises(cargo.RepoError):
+            pick(entries, "^3")
+
+    def test_default_features(self):
+        """Фича default включает опциональные зависимости."""
+        entry = {
+            "features": {"default": ["std"], "std": ["dep:libc", "log/std"],
+                         "extra": ["serde"]},
+            "features2": {"weak": ["serde?/std"]},
+        }
+        self.assertEqual(cargo.default_features(entry), {"libc", "log"})
+
+    def test_required_dependencies(self):
+        """Без default отбрасываются dev и опциональные зависимости."""
+        deps = cargo.required_dependencies(ENTRY)
+        self.assertEqual([d.name for d in deps], ["libc", "cc", "real-name"])
+        entry = dict(ENTRY, features={"default": ["serde"]})
+        names = [d.name for d in cargo.required_dependencies(entry)]
+        self.assertIn("serde", names)
 
 
 if __name__ == "__main__":
