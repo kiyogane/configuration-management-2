@@ -80,16 +80,22 @@ def load_test_graph(path):
     return graph
 
 
-class TestRepository:
-    """Граф пакетов из файла, пакеты — большие латинские буквы."""
+class GraphRepository:
+    """Граф пакетов, заданный словарем смежности {имя: [имена]}."""
 
-    def __init__(self, path):
-        """Загрузить описание графа из файла."""
-        self.graph = load_test_graph(path)
+    def __init__(self, graph):
+        """Запомнить словарь смежности."""
+        self.graph = graph
+
+    def known(self, name):
+        """Упомянут ли пакет в графе (слева или справа)."""
+        if name in self.graph:
+            return True
+        return any(name in deps for deps in self.graph.values())
 
     def root(self, name, version=None):
         """Вершина для анализируемого пакета (версия не используется)."""
-        if name not in self.graph:
+        if not self.known(name):
             raise cargo.RepoError(f"пакет {name} не описан в файле")
         return Node(name)
 
@@ -97,9 +103,26 @@ class TestRepository:
         """Прямые зависимости; неописанный пакет считается листом."""
         return [Node(name) for name in self.graph.get(node.name, [])]
 
+    def reversed(self):
+        """Репозиторий с обращенными ребрами: кто зависит от пакета."""
+        reverse = {}
+        for name, deps in self.graph.items():
+            for dep in deps:
+                reverse.setdefault(dep, []).append(name)
+        return GraphRepository(reverse)
+
+
+class TestRepository(GraphRepository):
+    """Граф пакетов из файла, пакеты — большие латинские буквы."""
+
+    def __init__(self, path):
+        """Загрузить описание графа из файла."""
+        super().__init__(load_test_graph(path))
+
 
 def open_repository(config):
     """Создать репозиторий по параметрам запуска."""
-    if config.test_mode:
-        return TestRepository(config.repo)
-    return CargoRepository(config.repo)
+    if not config.test_mode:
+        return CargoRepository(config.repo)
+    repo = TestRepository(config.repo)
+    return repo.reversed() if config.reverse else repo

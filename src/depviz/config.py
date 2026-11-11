@@ -29,6 +29,7 @@ class Config:
     test_mode: bool
     version: str | None
     filter: str
+    reverse: bool = False
 
     def as_pairs(self):
         """Вернуть параметры списком пар (ключ, значение)."""
@@ -38,6 +39,7 @@ class Config:
             ("test_mode", self.test_mode),
             ("version", self.version),
             ("filter", self.filter),
+            ("reverse", self.reverse),
         ]
 
 
@@ -95,16 +97,27 @@ def check_filter(substring, package):
         )
 
 
+def check_reverse(reverse, test_mode):
+    """Обратные зависимости доступны только для тестового репозитория."""
+    if reverse and not test_mode:
+        raise ConfigError(
+            "обратные зависимости (--reverse) поддерживаются только "
+            "в тестовом режиме: индекс crates.io не хранит обратных связей"
+        )
+
+
 def make_config(args):
     """Собрать Config из результата argparse с проверкой всех полей."""
     check_package(args.package, args.test_mode)
     check_repo(args.repo, args.test_mode)
     check_version(args.version, args.test_mode)
     check_filter(args.filter, args.package)
+    check_reverse(args.reverse, args.test_mode)
     return Config(
         package=args.package,
         repo=args.repo,
         test_mode=args.test_mode,
         version=args.version,
         filter=args.filter,
+        reverse=args.reverse,
     )

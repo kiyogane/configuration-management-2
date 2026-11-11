@@ -28,19 +28,26 @@ def build_parser():
                         help="версия пакета, например 1.0.200")
     parser.add_argument("--filter", default="",
                         help="не учитывать пакеты с этой подстрокой")
+    parser.add_argument("--reverse", action="store_true",
+                        help="вывести обратные зависимости пакета")
     return parser
 
 
-def print_graph(graph, root):
+def print_graph(graph, root, reverse=False):
     """Вывести граф списком смежности и сведения о циклах."""
-    print(f"Граф зависимостей {root.label()} (пакетов: {len(graph)}, "
+    title = "Обратные зависимости" if reverse else "Граф зависимостей"
+    arrow = "<-" if reverse else "->"
+    print(f"{title} {root.label()} (пакетов: {len(graph)}, "
           f"связей: {edge_count(graph)})")
     for node, deps in graph.items():
         targets = ", ".join(dep.label() for dep in deps) or "(нет)"
-        print(f"  {node.label()} -> {targets}")
+        print(f"  {node.label()} {arrow} {targets}")
+    if reverse:
+        users = [node.label() for node in graph if node != root]
+        print(f"От {root.label()} зависят: {', '.join(users) or '(никто)'}")
     cycle = find_cycle(graph)
     if cycle:
-        path = " -> ".join(node.label() for node in cycle)
+        path = f" {arrow} ".join(node.label() for node in cycle)
         print(f"Обнаружена циклическая зависимость: {path}")
 
 
@@ -49,7 +56,7 @@ def run(config):
     repo = open_repository(config)
     root = repo.root(config.package, config.version)
     graph = build_graph(repo, root, config.filter)
-    print_graph(graph, root)
+    print_graph(graph, root, config.reverse)
 
 
 def main(argv=None):

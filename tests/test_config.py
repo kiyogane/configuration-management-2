@@ -53,6 +53,7 @@ class ConfigTest(unittest.TestCase):
             ["--package", "A", "--test-mode", "--repo", "/no/such/file"],
             ["--package", "serde", "--version", "1.0.0", "--filter", "ser"],
             ["--package", "serde", "--version", "1.0.0", "--filter", " x"],
+            ["--package", "serde", "--version", "1.0.0", "--reverse"],
         ]
         for argv in bad:
             with self.subTest(argv=argv):

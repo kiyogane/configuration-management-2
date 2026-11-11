@@ -64,6 +64,27 @@ class GraphTest(unittest.TestCase):
         with self.assertRaises(RepoError):
             TestRepository(example("simple.txt")).root("Q")
 
+    def reverse(self, file_name, package, substring=""):
+        """Обратные зависимости пакета тем же обходом BFS."""
+        repo = TestRepository(example(file_name)).reversed()
+        return names(build_graph(repo, repo.root(package), substring))
+
+    def test_reverse(self):
+        """Обратные зависимости: кто прямо и транзитивно зависит."""
+        graph = self.reverse("simple.txt", "D")
+        self.assertEqual(graph, {"D": ["B", "C"], "B": ["A"],
+                                 "C": ["A"], "A": []})
+        self.assertEqual(self.reverse("simple.txt", "A"), {"A": []})
+        self.assertEqual(list(self.reverse("diamond.txt", "Z")),
+                         ["Z", "D", "B", "C", "A"])
+
+    def test_reverse_cycle_and_filter(self):
+        """Обратный обход с циклом и с фильтром."""
+        graph = self.reverse("cycle.txt", "A")
+        self.assertEqual(set(graph), {"A", "B", "C"})
+        graph = self.reverse("filter.txt", "XD", "C")
+        self.assertEqual(graph, {"XD": ["XB"], "XB": ["A"], "A": []})
+
     def test_node_label(self):
         """Подпись вершины с версией и без."""
         self.assertEqual(Node("serde", "1.0.0").label(), "serde 1.0.0")
@@ -79,6 +100,15 @@ class GraphTest(unittest.TestCase):
         self.assertIn("A -> B", out.getvalue())
         self.assertIn("циклическая зависимость: A -> B -> C -> A",
                       out.getvalue())
+
+    def test_main_reverse(self):
+        """main с --reverse печатает список зависящих пакетов."""
+        out = io.StringIO()
+        with redirect_stdout(out):
+            code = main(["--package", "D", "--test-mode", "--reverse",
+                         "--repo", example("simple.txt")])
+        self.assertEqual(code, 0)
+        self.assertIn("От D зависят: B, C, A", out.getvalue())
 
 
 if __name__ == "__main__":
