@@ -3,9 +3,11 @@
 import argparse
 import sys
 
+from depviz import cargo
 from depviz.config import DEFAULT_REPO, ConfigError, make_config
 
 EXIT_CONFIG_ERROR = 2
+EXIT_REPO_ERROR = 3
 
 
 def build_parser():
@@ -27,19 +29,42 @@ def build_parser():
     return parser
 
 
-def print_pairs(pairs):
-    """Вывести пары ключ-значение."""
-    for key, value in pairs:
-        print(f"{key}={value}")
+def describe(dep):
+    """Строка с описанием прямой зависимости."""
+    notes = [dep.kind]
+    if dep.optional:
+        notes.append("optional")
+    if dep.target:
+        notes.append(f"target={dep.target}")
+    return f"  {dep.name} {dep.req} [{', '.join(notes)}]"
+
+
+def print_direct(config):
+    """Вывести все прямые зависимости заданной версии пакета."""
+    entries = cargo.fetch_entries(config.repo, config.package)
+    entry = cargo.find_version(entries, config.version)
+    deps = cargo.direct_dependencies(entry)
+    print(f"Прямые зависимости {config.package} {config.version}:")
+    if not deps:
+        print("  (нет)")
+    for dep in deps:
+        print(describe(dep))
 
 
 def main(argv=None):
-    """Точка входа: разобрать опции и вывести параметры."""
+    """Точка входа: разобрать опции и вывести прямые зависимости."""
     args = build_parser().parse_args(argv)
     try:
         config = make_config(args)
     except ConfigError as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         return EXIT_CONFIG_ERROR
-    print_pairs(config.as_pairs())
+    if config.test_mode:
+        print("Тестовый режим будет реализован на этапе 3")
+        return 0
+    try:
+        print_direct(config)
+    except cargo.RepoError as error:
+        print(f"Ошибка: {error}", file=sys.stderr)
+        return EXIT_REPO_ERROR
     return 0

@@ -4,7 +4,7 @@ import io
 import os
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr
 
 from depviz.cli import EXIT_CONFIG_ERROR, build_parser, main
 from depviz.config import ConfigError, make_config
@@ -59,14 +59,12 @@ class ConfigTest(unittest.TestCase):
                 with self.assertRaises(ConfigError):
                     parse(argv)
 
-    def test_main_prints_pairs(self):
-        """main выводит параметры в формате ключ=значение."""
-        out = io.StringIO()
-        with redirect_stdout(out):
-            code = main(["--package", "serde", "--version", "1.0.200"])
-        self.assertEqual(code, 0)
-        self.assertIn("package=serde", out.getvalue())
-        self.assertIn("version=1.0.200", out.getvalue())
+    def test_pairs(self):
+        """Параметры выводятся парами ключ-значение."""
+        cfg = parse(["--package", "serde", "--version", "1.0.200"])
+        pairs = dict(cfg.as_pairs())
+        self.assertEqual(pairs["package"], "serde")
+        self.assertEqual(pairs["version"], "1.0.200")
 
     def test_main_error_code(self):
         """При ошибке main возвращает код и пишет в stderr."""
