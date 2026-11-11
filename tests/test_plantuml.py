@@ -22,17 +22,16 @@ def decode(text):
     return zlib.decompressobj(-15).decompress(data).decode("utf-8")
 
 
+A, B, C = Node("A"), Node("B", "1.0.0"), Node("C")
+GRAPH = {A: [B], B: [C], C: [A]}
+
+
 class PlantUmlTest(unittest.TestCase):
     """Проверки to_plantuml, encode и show_image."""
 
-    def setUp(self):
-        """Небольшой граф с циклом."""
-        self.a, self.b, self.c = Node("A"), Node("B", "1.0.0"), Node("C")
-        self.graph = {self.a: [self.b], self.b: [self.c], self.c: [self.a]}
-
     def test_text(self):
         """Описание содержит вершины, ребра и выделенный корень."""
-        text = plantuml.to_plantuml(self.graph, self.a)
+        text = plantuml.to_plantuml(GRAPH, A)
         lines = text.splitlines()
         self.assertEqual(lines[0], "@startuml")
         self.assertEqual(lines[-1], "@enduml")
@@ -42,14 +41,14 @@ class PlantUmlTest(unittest.TestCase):
 
     def test_reverse_text(self):
         """В обратном режиме ребра ведут к анализируемому пакету."""
-        graph = {self.a: [self.b], self.b: []}
-        lines = plantuml.to_plantuml(graph, self.a, True).splitlines()
+        graph = {A: [B], B: []}
+        lines = plantuml.to_plantuml(graph, A, True).splitlines()
         self.assertIn("n1 --> n0", lines)
         self.assertIn("title Обратные зависимости A", lines)
 
     def test_encode_round_trip(self):
         """Закодированный текст раскодируется обратно."""
-        text = plantuml.to_plantuml(self.graph, self.a)
+        text = plantuml.to_plantuml(GRAPH, A)
         self.assertEqual(decode(plantuml.encode(text)).rstrip("\0"), text)
         url = plantuml.server_url(text)
         self.assertTrue(url.startswith(plantuml.SERVER + "/png/"))

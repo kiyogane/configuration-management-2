@@ -99,21 +99,28 @@ def fits(requirement, version):
         raise RepoError(str(error)) from error
 
 
-def select_version(entries, requirement):
-    """Выбрать наибольшую версию, подходящую под требование.
+def candidate_groups(entries):
+    """Группы версий в порядке предпочтения, как в Cargo.
 
-    Как и Cargo, сначала рассматриваются релизы без пометки yanked,
-    затем пре-релизы, затем отозванные (yanked) версии.
+    Сначала релизы без пометки yanked, затем пре-релизы,
+    затем отозванные (yanked) версии.
     """
-    groups = (
-        [e for e in entries if not e.get("yanked") and "-" not in e["vers"]],
-        [e for e in entries if not e.get("yanked")],
-        entries,
-    )
-    for group in groups:
+    active = [e for e in entries if not e.get("yanked")]
+    releases = [e for e in active if "-" not in e["vers"]]
+    return releases, active, entries
+
+
+def newest(entries):
+    """Наибольшая версия из списка."""
+    return max(entries, key=lambda e: semver.sort_key(e["vers"]))
+
+
+def select_version(entries, requirement):
+    """Выбрать наибольшую версию, подходящую под требование."""
+    for group in candidate_groups(entries):
         suitable = [e for e in group if fits(requirement, e["vers"])]
         if suitable:
-            return max(suitable, key=lambda e: semver.sort_key(e["vers"]))
+            return newest(suitable)
     name = entries[0]["name"] if entries else "?"
     raise RepoError(f"нет версии {name}, подходящей под '{requirement}'")
 

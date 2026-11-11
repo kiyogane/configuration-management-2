@@ -19,18 +19,25 @@ def bfs_level(repo, level, graph, substring):
     """Обработать один уровень BFS и рекурсивно перейти к следующему."""
     if not level:
         return
-    next_level, planned = [], set()
+    next_level = []
     for node in level:
-        graph[node] = []
-        for dep in repo.dependencies(node):
-            if substring and substring in dep.name:
-                continue
-            graph[node].append(dep)
-            if dep not in graph and dep not in planned:
-                planned.add(dep)
-                next_level.append(dep)
-    next_level = [node for node in next_level if node not in graph]
+        graph[node] = allowed_deps(repo, node, substring)
+        next_level.extend(graph[node])
+    next_level = unvisited(next_level, graph)
     bfs_level(repo, next_level, graph, substring)
+
+
+def allowed_deps(repo, node, substring):
+    """Прямые зависимости вершины без пакетов с подстрокой фильтра."""
+    deps = repo.dependencies(node)
+    if not substring:
+        return deps
+    return [dep for dep in deps if substring not in dep.name]
+
+
+def unvisited(nodes, graph):
+    """Непосещенные вершины без повторов, в исходном порядке."""
+    return [node for node in dict.fromkeys(nodes) if node not in graph]
 
 
 def find_cycle(graph):

@@ -2,12 +2,15 @@
 
 import io
 import os
-import tempfile
 import unittest
 from contextlib import redirect_stderr
 
 from depviz.cli import EXIT_CONFIG_ERROR, build_parser, main
 from depviz.config import ConfigError, make_config
+
+
+REPO_FILE = os.path.join(os.path.dirname(__file__), "..", "examples",
+                         "repos", "simple.txt")
 
 
 def parse(argv):
@@ -17,15 +20,6 @@ def parse(argv):
 
 class ConfigTest(unittest.TestCase):
     """Проверки make_config."""
-
-    def setUp(self):
-        """Создать временный файл тестового репозитория."""
-        handle, self.repo_file = tempfile.mkstemp(suffix=".txt")
-        os.close(handle)
-
-    def tearDown(self):
-        """Удалить временный файл."""
-        os.remove(self.repo_file)
 
     def test_valid_real_mode(self):
         """Корректные параметры для crates.io."""
@@ -38,7 +32,7 @@ class ConfigTest(unittest.TestCase):
     def test_valid_test_mode(self):
         """Корректные параметры для тестового репозитория."""
         cfg = parse(["--package", "A", "--test-mode",
-                     "--repo", self.repo_file, "--filter", "X"])
+                     "--repo", REPO_FILE, "--filter", "X"])
         self.assertTrue(cfg.test_mode)
         self.assertIsNone(cfg.version)
 
@@ -50,7 +44,7 @@ class ConfigTest(unittest.TestCase):
             ["--package", "serde"],
             ["--package", "serde", "--version", "1.x"],
             ["--package", "serde", "--version", "1.0.0", "--repo", "ftp:/x"],
-            ["--package", "a", "--test-mode", "--repo", self.repo_file],
+            ["--package", "a", "--test-mode", "--repo", REPO_FILE],
             ["--package", "A", "--test-mode", "--repo", "/no/such/file"],
             ["--package", "serde", "--version", "1.0.0", "--filter", "ser"],
             ["--package", "serde", "--version", "1.0.0", "--filter", " x"],

@@ -41,22 +41,37 @@ def build_parser():
     return parser
 
 
-def print_graph(graph, root, reverse=False):
-    """Вывести граф списком смежности и сведения о циклах."""
-    title = "Обратные зависимости" if reverse else "Граф зависимостей"
-    arrow = "<-" if reverse else "->"
-    print(f"{title} {root.label()} (пакетов: {len(graph)}, "
-          f"связей: {edge_count(graph)})")
+def print_adjacency(graph, arrow):
+    """Вывести граф списком смежности."""
     for node, deps in graph.items():
         targets = ", ".join(dep.label() for dep in deps) or "(нет)"
         print(f"  {node.label()} {arrow} {targets}")
-    if reverse:
-        users = [node.label() for node in graph if node != root]
-        print(f"От {root.label()} зависят: {', '.join(users) or '(никто)'}")
+
+
+def print_users(graph, root):
+    """Вывести пакеты, зависящие от анализируемого."""
+    users = [node.label() for node in graph if node != root]
+    print(f"От {root.label()} зависят: {', '.join(users) or '(никто)'}")
+
+
+def print_cycle(graph, arrow):
+    """Вывести найденный цикл, если он есть."""
     cycle = find_cycle(graph)
     if cycle:
         path = f" {arrow} ".join(node.label() for node in cycle)
         print(f"Обнаружена циклическая зависимость: {path}")
+
+
+def print_graph(graph, root, reverse=False):
+    """Вывести граф, зависящие пакеты (для --reverse) и цикл."""
+    title = "Обратные зависимости" if reverse else "Граф зависимостей"
+    arrow = "<-" if reverse else "->"
+    print(f"{title} {root.label()} (пакетов: {len(graph)}, "
+          f"связей: {edge_count(graph)})")
+    print_adjacency(graph, arrow)
+    if reverse:
+        print_users(graph, root)
+    print_cycle(graph, arrow)
 
 
 def save_plantuml(graph, root, config):
