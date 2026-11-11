@@ -14,6 +14,7 @@ VERSION_RE = re.compile(
 )
 MAX_CRATE_NAME = 64
 URL_SCHEMES = ("http", "https")
+PUML_SUFFIX = ".puml"
 
 
 class ConfigError(Exception):
@@ -30,6 +31,8 @@ class Config:
     version: str | None
     filter: str
     reverse: bool = False
+    output: str = ""
+    image: bool = False
 
     def as_pairs(self):
         """Вернуть параметры списком пар (ключ, значение)."""
@@ -40,6 +43,8 @@ class Config:
             ("version", self.version),
             ("filter", self.filter),
             ("reverse", self.reverse),
+            ("output", self.output),
+            ("image", self.image),
         ]
 
 
@@ -106,6 +111,21 @@ def check_reverse(reverse, test_mode):
         )
 
 
+def check_output(path):
+    """Проверить путь к файлу PlantUML."""
+    if not path.endswith(PUML_SUFFIX):
+        raise ConfigError(f"файл вывода должен иметь расширение .puml: {path}")
+    folder = os.path.dirname(path)
+    if folder and os.path.exists(folder) and not os.path.isdir(folder):
+        raise ConfigError(f"не каталог: {folder}")
+
+
+def default_output(package, reverse):
+    """Путь к файлу PlantUML по умолчанию."""
+    suffix = "-reverse" if reverse else ""
+    return os.path.join("out", f"{package}{suffix}{PUML_SUFFIX}")
+
+
 def make_config(args):
     """Собрать Config из результата argparse с проверкой всех полей."""
     check_package(args.package, args.test_mode)
@@ -113,6 +133,8 @@ def make_config(args):
     check_version(args.version, args.test_mode)
     check_filter(args.filter, args.package)
     check_reverse(args.reverse, args.test_mode)
+    output = args.output or default_output(args.package, args.reverse)
+    check_output(output)
     return Config(
         package=args.package,
         repo=args.repo,
@@ -120,4 +142,6 @@ def make_config(args):
         version=args.version,
         filter=args.filter,
         reverse=args.reverse,
+        output=output,
+        image=args.image,
     )

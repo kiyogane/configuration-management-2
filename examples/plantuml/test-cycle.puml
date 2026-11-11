@@ -1,0 +1,13 @@
+@startuml
+title Зависимости A
+skinparam defaultTextAlignment center
+rectangle "A" as n0 #LightBlue
+rectangle "B" as n1
+rectangle "C" as n2
+rectangle "D" as n3
+n0 --> n1
+n1 --> n2
+n1 --> n3
+n2 --> n0
+n3 --> n3
+@enduml

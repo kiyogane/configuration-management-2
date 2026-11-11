@@ -1,0 +1,19 @@
+@startuml
+title Зависимости serde 1.0.200
+skinparam defaultTextAlignment center
+rectangle "serde 1.0.200" as n0 #LightBlue
+rectangle "serde_derive 1.0.200" as n1
+rectangle "proc-macro2 1.0.107" as n2
+rectangle "quote 1.0.47" as n3
+rectangle "syn 2.0.119" as n4
+rectangle "unicode-ident 1.0.27" as n5
+n0 --> n1
+n1 --> n2
+n1 --> n3
+n1 --> n4
+n2 --> n5
+n3 --> n2
+n4 --> n2
+n4 --> n3
+n4 --> n5
+@enduml

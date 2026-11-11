@@ -33,6 +33,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(cfg.package, "serde")
         self.assertFalse(cfg.test_mode)
         self.assertEqual(cfg.repo, "https://index.crates.io")
+        self.assertEqual(cfg.output, os.path.join("out", "serde.puml"))
 
     def test_valid_test_mode(self):
         """Корректные параметры для тестового репозитория."""
@@ -54,6 +55,7 @@ class ConfigTest(unittest.TestCase):
             ["--package", "serde", "--version", "1.0.0", "--filter", "ser"],
             ["--package", "serde", "--version", "1.0.0", "--filter", " x"],
             ["--package", "serde", "--version", "1.0.0", "--reverse"],
+            ["--package", "serde", "--version", "1.0.0", "--output", "g.png"],
         ]
         for argv in bad:
             with self.subTest(argv=argv):

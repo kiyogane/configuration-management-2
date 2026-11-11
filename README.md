@@ -9,7 +9,7 @@
 библиотеки для получения зависимостей не используются — только
 стандартная библиотека Python 3.10+.
 
-Текущее состояние: **этап 4 — дополнительные операции**.
+Текущее состояние: **этап 5 — визуализация** (все этапы выполнены).
 
 ## Параметры командной строки
 
@@ -21,6 +21,8 @@
 | `--version ВЕРСИЯ` | версия пакета вида `1.2.3` (обязательна вне тестового режима) |
 | `--filter ПОДСТРОКА` | не учитывать пакеты, имя которых содержит подстроку |
 | `--reverse` | вывести обратные зависимости пакета (только с `--test-mode`) |
+| `--output ФАЙЛ` | куда сохранить описание PlantUML (по умолчанию `out/ИМЯ.puml`) |
+| `--image` | показать изображение графа |
 
 ## Источник данных
 
@@ -49,6 +51,7 @@
 | `semver.py` | требования к версиям Cargo (`^`, `~`, `=`, `>`, `>=`, `<`, `<=`, `*`, списки через запятую) |
 | `repository.py` | источники графа: `CargoRepository` (crates.io) и `TestRepository` (файл) |
 | `graph.py` | обход BFS с рекурсией, поиск цикла |
+| `plantuml.py` | описание графа на PlantUML, вывод изображения |
 | `cli.py` | опции командной строки и вывод |
 
 **Какие зависимости учитываются.** Берутся зависимости видов `normal` и
@@ -96,6 +99,70 @@ $ ./run.sh --package D --test-mode --repo examples/repos/simple.txt --reverse
 От D зависят: B, C, A
 ```
 
+## Визуализация (PlantUML)
+
+После вывода графа программа формирует его описание на языке PlantUML,
+сохраняет в файл `--output` и печатает на экран. Каждый пакет —
+прямоугольник (`rectangle`), анализируемый пакет выделен цветом, ребро
+`a --> b` означает «a зависит от b».
+
+С опцией `--image` изображение выводится на экран:
+
+1. если в системе есть команда `plantuml` или задана переменная
+   `PLANTUML_JAR` (путь к `plantuml.jar`, нужна Java), рисуется PNG рядом
+   с `.puml` и открывается программой просмотра;
+2. иначе текст кодируется (deflate + base64-алфавит PlantUML) в URL
+   публичного сервера `https://www.plantuml.com/plantuml/png/...`,
+   который открывается в браузере.
+
+### Примеры для трех пакетов
+
+Описания лежат в `examples/plantuml/`, картинки рендерит сервер PlantUML:
+
+- serde 1.0.200 — [картинка][serde] (6 пакетов)
+- rand 0.8.5 — [картинка][rand] (11 пакетов)
+- tokio 1.40.0 — [картинка][tokio] (40 пакетов)
+
+[serde]: https://www.plantuml.com/plantuml/svg/PP4nJiCm68Ltdy8gSohRIOLOK65cP4UM_HCid3_5-OrWB9VW6eWf0-8Cper8wYfAos8zwNtl-LdUTgG3nSOpSkI1fy_qbRvJF-nJdtxIxx0VFbBFEmWMk5oBjHA2TSyETpheXbjurD7JFRpHZNSrDe34pNX0O04CQQp7qjL9VCLrnr7mYpjNFz6jZ_0FVR0GtEjPGYwnNMXDqMWJMdMWfBZCb5fIBx6bt58TxVBahdVaQWhBg-nMIpUYCws5mjdfKOSfnv8D6-SNnVMq2MLMQbRbh2g6AginKSvSTQxAMMtO5j1Et_47
+[rand]: https://www.plantuml.com/plantuml/svg/RPAzJiCm54PtFuLLvbYnyx-Wmip8ZenpQIqI9pXEHTdAI_0QYAa3uXdSDyAfGqWBKXGT-Jl-RdILPMUuDdrT8IDD1TY-sNVxOVU7dTtRJ_jrs1rUxHvhhaeSafmag7kKgkMQrxY41zvNvXQUpLKbLwe6PR1mBz18Wp1ShLpZulVk0lCEgn1VtCZLsbnNFSozIjuBvp522-fDUbvp9zRSFSwAoEYmlqwZmHafYRqHpOsstGILD92dnr5iR8ddpWleHZJjzlZHQUIDv3yZA47B3Po8wSauvmKr5xfXc9AGq33pLZQtdlh6m36FnpYVnzrMOJPSfeLFYtdQAocQ4W9P3kiVIjXOGaFabXq4byCcVuXD5275FCKJkRFOKu9KuYb5AlMKJPHFL22LZJFSk7mIYtFA9tBY4bGv_7JV
+[tokio]: https://www.plantuml.com/plantuml/svg/NLP1Rjim4Bpx5K9xbY2IaYLVYhJd7ditQ8coMLEaIb6narlwYNwZw2c7eczGVbHI8aKoG11CkEFTdTbT8m-Zmb9DFTifgXX9vb_px_dF_FhsCh_EV-T_RozlF-VNH8ah5Gd8YZpBT-ELyW5Bt2SjwV34r3ToLvyPFVEUS9Kq-XUHEqaQXVbPv_mGVlf3WiU4vyd7h_HyKL_OH4Bc2JTN9N53aZn3MLMjR11I1ihJGOhl-YLbL1acp81bmf29srP2Hlb2gJAmKb18QRfpIZlTMfwLQxW8muoUcZN_mNww3CCzvVJvAEwqDIKEhi8-v8YJwLI7lVWgZCjfL4tQadxzEyz01kkLLuUy6-Mjk8rQCh-kBQsaGoHd68v1gjAHG1woEioqC4PIxPx4IiZ5RDiSYCm-qvvH4owsU6HnJ_eU3t1L3oqZSdZiTRL7qcYFmTwP32ANrTD0sXHBmd42zIHSdZ8U9YCIBd4dAlAvOrWHQAfam16gTwqs5waJr1coyJeUnFEesd2E8FAsuu_BdhXDYoozuF5oakB6pG2tLOEHbtg0vAxTqYs0mec4aPtw6FLSz0WbwOxw3gZI9RTHmtXrPODWXqT3APsnC3Rs9kwfQSsKt2YnhOo9nkn0YWSAbyM2hbpaB_anqKVCp84R5wo5CBAu4wnTofaqTbzWR3BcncBW4yJxUy7w1-OhnLg48gVFH9aaeZSdvR8WyBx8iH6Ih6dStKTEDtIu4BdSY2iJkpjC7S5gacHShiCbYVoLAUbeii-soqPbFA6dGOcq4Nql-6gjfUtZlH2JMi9x6uvClJoT93Nd8V7JeXdOGQBw_H7ngJVxuYKVTlgRDaq_cQzGX-2EWnMX3HKRAZUqtr2reNf3EZEocNCFWOVGGxJ1QaEr3nSUwkfx2tNvoiBAmzf3tG78VVlGgii3308C0so48w_NPeI5nqRymJvh2hIgzKbuN0LOzmLXy1vq08kjILZQPzqxjEdrTdiC0cmCzFeSH2Z0vjrF4FaHEeWCjahrqdbi1b5ukZKTcQbK0QujFkmU26_DVmd_0G00
+
+### Сравнение с `cargo tree`
+
+Штатный инструмент — `cargo tree` (в проекте с одной зависимостью,
+`-e normal,build`). Версии всех пакетов, которые есть в обоих выводах,
+совпадают: правило выбора версий реализовано так же, как в Cargo.
+
+| Пакет | depviz | `cargo tree` (текущая платформа) | `cargo tree --target all` |
+|-------|--------|----------------------------------|---------------------------|
+| serde 1.0.200 | 6 | 1 | 6 (совпадает) |
+| rand 0.8.5 | 11 | 8 | 14 |
+| tokio 1.40.0 | 40 | 2 | 13 |
+
+Причины расхождений:
+
+1. **Платформенные зависимости (`target`).** `cargo tree` по умолчанию
+   показывает зависимости только для текущей платформы, а depviz не
+   вычисляет выражения `cfg(...)` и учитывает зависимости всех платформ.
+   Пример: serde 1.0.200 подключает `serde_derive` под
+   `cfg(any())` — условие, которое ложно на любой платформе (прием для
+   ускорения сборки), поэтому `cargo tree` показывает только `serde`.
+   То же для `zerocopy-derive` у rand и `backtrace` у tokio
+   (`cfg(tokio_taskdump)`). С `--target all` serde совпадает полностью.
+2. **Фичи, которые включает родитель.** depviz включает у каждого пакета
+   только его собственные фичи `default`. Cargo объединяет фичи,
+   запрошенные всеми зависимыми пакетами: rand с фичей `std` включает
+   `rand_core/std` → `getrandom` → `cfg-if`, `wasi`. Этих трех пакетов
+   у depviz нет.
+3. **`default-features = false`.** Если родитель отключает фичи по
+   умолчанию у зависимости, Cargo их не включает, а depviz включает
+   всегда. Поэтому у tokio граф заметно больше: например, `backtrace`
+   подключает `addr2line` без фич по умолчанию, а depviz учитывает их
+   (`cpp_demangle`, `fallible-iterator`, `memmap2` и т. д.), и дальше
+   граф разрастается (`twox-hash` → `rand 0.10`).
+4. **Дубликаты вершин.** `cargo tree` печатает дерево и помечает повторы
+   `(*)`; depviz строит граф, где каждый пакет-версия — одна вершина.
+
 ## Тестовый репозиторий
 
 Режим `--test-mode`: вместо URL указывается путь к текстовому файлу,
@@ -122,8 +189,10 @@ D:          # нет зависимостей
 | `--version` | не задана вне тестового режима; не соответствует формату `X.Y.Z` |
 | `--filter` | пробелы по краям; подстрока входит в имя самого анализируемого пакета |
 | `--reverse` | задан без `--test-mode` |
+| `--output` | расширение не `.puml`; родительский путь не каталог |
 
-При ошибке выводится сообщение `Ошибка: ...` в stderr, код возврата 2.
+При ошибке выводится сообщение `Ошибка: ...` в stderr. Коды возврата:
+2 — ошибка параметров, 3 — ошибка репозитория, 4 — ошибка ввода-вывода.
 
 ## Сборка и тесты
 
@@ -133,6 +202,7 @@ D:          # нет зависимостей
 ./run.sh --package serde --version 1.0.200   # запуск
 make test                                    # модульные тесты
 make demo                                    # демонстрационные скрипты
+PLANTUML_JAR=~/plantuml.jar ./run.sh --package rand --version 0.8.5 --image
 ```
 
 ## Примеры
@@ -165,11 +235,26 @@ $ ./run.sh --package serde
 Ошибка: версия пакета не задана (--version)
 ```
 
+## Этапы
+
+Каждый этап — отдельный коммит (`git log`), демонстрация — скрипт
+`scripts/demo_stageN.sh`.
+
+1. Прототип CLI: опции, проверка, вывод параметров `ключ=значение`.
+2. Сбор данных: прямые зависимости заданной версии из crates.io.
+3. Граф: BFS с рекурсией, фильтр, циклы, тестовый репозиторий.
+4. Обратные зависимости (`--reverse`).
+5. Визуализация: PlantUML, изображение, сравнение с `cargo tree`.
+
+Вывод, нужный «только для этапа» (параметры на этапе 1, прямые
+зависимости на этапе 2), на следующих этапах заменен выводом графа.
+
 ## Структура
 
 ```
 src/depviz/      исходный код
 tests/           модульные тесты (unittest)
 scripts/         демонстрационные скрипты по этапам
-examples/repos/  тестовые репозитории
+examples/repos/     тестовые репозитории
+examples/plantuml/  PlantUML-описания примеров
 ```

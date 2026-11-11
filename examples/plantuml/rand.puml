@@ -1,0 +1,30 @@
+@startuml
+title Зависимости rand 0.8.5
+skinparam defaultTextAlignment center
+rectangle "rand 0.8.5" as n0 #LightBlue
+rectangle "libc 0.2.191" as n1
+rectangle "rand_chacha 0.3.1" as n2
+rectangle "rand_core 0.6.4" as n3
+rectangle "ppv-lite86 0.2.21" as n4
+rectangle "zerocopy 0.8.63" as n5
+rectangle "zerocopy-derive 0.8.63" as n6
+rectangle "proc-macro2 1.0.107" as n7
+rectangle "quote 1.0.47" as n8
+rectangle "syn 2.0.119" as n9
+rectangle "unicode-ident 1.0.27" as n10
+n0 --> n1
+n0 --> n2
+n0 --> n3
+n2 --> n4
+n2 --> n3
+n4 --> n5
+n5 --> n6
+n6 --> n7
+n6 --> n8
+n6 --> n9
+n7 --> n10
+n8 --> n7
+n9 --> n7
+n9 --> n8
+n9 --> n10
+@enduml
